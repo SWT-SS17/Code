@@ -1,8 +1,8 @@
 package de.thm.iem.swtproject17.jumpnrun.core;
 
-/* Eine Vektor Klasse um Berechnungen durchzuführen
- * 2.5 Dimensional d.h. Hat 2 echte Dimensionen speichert aber noch zusätzlich die Z-Reihenfolge ab.
- * Für genauere Informationen im Bezug auf die Methoden siehe das GameVector Interface.
+/* Eine Vektor Klasse um Berechnungen durchzufÃ¼hren
+ * 2.5 Dimensional d.h. Hat 2 echte Dimensionen speichert aber noch zusÃ¤tzlich die Z-Reihenfolge ab.
+ * FÃ¼r genauere Informationen im Bezug auf die Methoden siehe das GameVector Interface.
  */
 
 public class GameVector_2_5 implements GameVector {

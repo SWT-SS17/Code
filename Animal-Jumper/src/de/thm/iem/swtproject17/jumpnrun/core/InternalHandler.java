@@ -1,23 +1,24 @@
 package de.thm.iem.swtproject17.jumpnrun.core;
 
 /* Die Klasse InternalHandler ist eigentlich nur eine Sammlung von Methoden, welche 
- * die Internen Berechnungen in geordneter Reihenfolge durchführen.
+ * die Internen Berechnungen in geordneter Reihenfolge durchfï¿½hren.
  */
 
 
 public class InternalHandler {
 	
-	public static void doInternalTick() { //führt alles interne durch 
-		executeEntityLogic(); //führt die Logik aller Entititäten mit Logik aus
-		doPhysics();          //führt die Physikalischen Berechnungen durch
+	public static void doInternalTick() { //fï¿½hrt alles interne durch 
+		executeEntityLogic(); //fï¿½hrt die Logik aller Entititï¿½ten mit Logik aus
+		doPhysics();          //fï¿½hrt die Physikalischen Berechnungen durch
 		handleMessages();     //behandelt alle Nachrichten
-		addDeleteEntities();  //fügt alle Entitäten hinzu die hinzugefügt werden müssen und löscht alle die gelöscht werden müssen
+		updateCameras();
+		addDeleteEntities();  //fï¿½gt alle Entitï¿½ten hinzu die hinzugefï¿½gt werden mï¿½ssen und lï¿½scht alle die gelï¿½scht werden mï¿½ssen
 		TickControl.getInstance().internalFinished(); //sagt der TickControl, dass diese Phase beendet ist
 	}
 	
 	private static void executeEntityLogic() {
-		for ( Entity entity : EntityControl.getInstance().getLogicalEntities() ) //für alle Entitäten mit Logik
-			entity.executeLogic(); //führe diese Logik aus
+		for ( Entity entity : EntityControl.getInstance().getLogicalEntities() ) //fï¿½r alle Entitï¿½ten mit Logik
+			entity.executeLogic(); //fï¿½hre diese Logik aus
 	}
 	
 	private static void doPhysics() {
@@ -26,6 +27,11 @@ public class InternalHandler {
 	
 	private static void handleMessages() {
 		MessageHandler.getInstance().handleMessages(); //veranlasst den MessageHandler alle Nachrichten zu behandeln
+	}
+	
+	private static void updateCameras() {
+		for ( Cam camera : EntityControl.getInstance().getCameras() )
+			camera.updateCameraLogic();
 	}
 	
 	private static void addDeleteEntities() {
