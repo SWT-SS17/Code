@@ -2,9 +2,10 @@ package de.thm.iem.swtproject17.jumpnrun.core;
 
 import java.util.ArrayList;
 
-/* Der MessageHandler ist eine Klasse welche Events und ähnliches ( z.B. Kollisionen und das auslösen von Items ) 
+/* Der MessageHandler ist eine Klasse welche Events und Ã¤hnliches ( z.B. Kollisionen und das auslï¿½sen von Items ) 
  * in Form von Nachrichten sammelt und diese Nachrichten dann behandelt wenn es den Befehl dazu bekommt
- * Die Klasse ist ein Singleton d.h. lässt sich die einzige instanz über MesageHandler.getInstance() erhalten
+ * Die Klasse ist ein Singleton d.h. lÃ¤sst sich die einzige instanz Ã¼ber MesageHandler.getInstance() erhalten
+ * Zudem muss die Klasse Ã¼ber MessageHandler.startUp() gestartet sein bevor eine Instanz erhalten werden kann
  */
 
 public class MessageHandler {
@@ -12,30 +13,38 @@ public class MessageHandler {
 	private static MessageHandler instance; //zum Speichern der Instanz
 	ArrayList<Message> messages = null;    //zum Speichern der Messages
 	
-	protected MessageHandler() { //Konstruktor 
-		messages = new ArrayList<Message>();
+	public static void shutdown() {
+		instance = null;
 	}
 	
-	public static MessageHandler getInstance() { //gibt die instanz zurück
+	public static void startup() {
+		instance = new MessageHandler();
+	}
+	
+	public static MessageHandler getInstance() { //gibt die instanz zurÃ¼ck
 		if ( instance == null ) {
-			instance = new MessageHandler();
+			new IllegalStateException( "Trying to get instance of MessageHandler without using startup" );
 		}
 		return instance;
 	}
 	
-	public void addCollision( Entity en1, Entity en2 ) { //wird von der Physics Klasse benutzt um Kollisionen hinzuzufügen
+	protected MessageHandler() { //Konstruktor 
+		messages = new ArrayList<Message>();
+	}
+	
+	public void addCollision( Entity en1, Entity en2 ) { //wird von der Physics Klasse benutzt um Kollisionen hinzuzufÃ¼gen
 		messages.add( new Collision( en1, en2 ) );
 	}
 	
 	public void handleMessages() { //Befehl um alle Nachrichten zu behandeln
-		for( Message message : messages ) { //Für alle Nachrichten
+		for( Message message : messages ) { //FÃ¼r alle Nachrichten
 			message.handleMessage(); //behandle Nachricht
 		}
-		messages = new ArrayList<Message>(); //Setze die ArrayList mit den Nachrichten zurück
+		messages = new ArrayList<Message>(); //Setze die ArrayList mit den Nachrichten zurÃ¼ck
 	}
 	
 	abstract class Message { //abstrakte Nachricht Klasse von der alle konkreten Nachrichten Klassen erben
-		abstract void handleMessage(); //definiert das alle Nachrichten zumindest eine Methode zum behandeln haben müssen
+		abstract void handleMessage(); //definiert das alle Nachrichten zumindest eine Methode zum behandeln haben mï¿½ssen
 	}
 	
 	private class Collision extends Message { //Collision Klasse - ist die Nachrichtenklasse welche eine Kollision darstellt
@@ -48,7 +57,7 @@ public class MessageHandler {
 			this.en2 = en2;
 		}
 		
-		public void handleMessage() { //und ruft dann später eine onCollide auf solbald sie behandelt wird
+		public void handleMessage() { //und ruft dann spÃ¤ter eine onCollide Methode auf solbald sie behandelt wird
 			en1.onCollide( en2 );
 			en2.onCollide( en1 );
 		}
