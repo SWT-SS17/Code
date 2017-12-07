@@ -1,10 +1,11 @@
 package de.thm.iem.swtproject17.jumpnrun.core;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
-/* Die EntityControl Klasse ist eine Klasse welche die Existenz von Entit�ten verwaltet
- * Zu ihren Aufgaben geh�rt, dass erzeugen, kategorisieren und zu entfernen
- * Die Klasse ist ein Singleton und man kann die Instanz �ber EntityControl.getInstance() erhalten
+/* Die EntityControl Klasse ist eine Klasse welche die Existenz von Entitäten verwaltet
+ * Zu ihren Aufgaben gehört, dass erzeugen, kategorisieren und zu entfernen
+ * Die Klasse ist ein Singleton und man kann die Instanz über EntityControl.getInstance() erhalten
  */
 
 public class EntityControl {
@@ -13,6 +14,7 @@ public class EntityControl {
 	private ArrayList<Entity> worldEntities,toSpawnEntities, toDespawnEntities, immobileEntities, logicalEntities;
 	private ArrayList<MovingEntity> movingEntities;
 	private ArrayList<Cam> cameras;
+	private ArrayList<Player> players;
 	//Listen um Unterschiedliche Typen von Entit�ten zu sperichern
 	
 	protected EntityControl() {
@@ -24,13 +26,6 @@ public class EntityControl {
 		movingEntities = new ArrayList<MovingEntity>();
 		cameras = new ArrayList<Cam>();
 		//Instanziert die Listen
-	}
-		
-	public static EntityControl getInstance() {
-		if ( instance == null )
-			new IllegalStateException( "Used Entity Control without starting up properly!" );
-		//anders als andere Singletons muss die EntityControl hoch und runtergefahren werden bevor sie benutzt werden kann
-		return instance; //gibt die Instanzen zur�ck
 	}
 	
 	public static void shutdown() { //wird benutzt um die EntityControl runterzufahren wenn sie gestartet ist
@@ -45,6 +40,13 @@ public class EntityControl {
 		instance = new EntityControl();
 	}
 	
+	public static EntityControl getInstance() { //gibt die instanz der EntityControl zurück falls sie hochgefahren ist
+		if ( instance == null )
+			new IllegalStateException( "Used Entity Control without starting up properly!" );
+		//anders als andere Singletons muss die EntityControl hoch und runtergefahren werden bevor sie benutzt werden kann
+		return instance; //gibt die Instanzen zurück
+	}
+	
 	
 	//Wird benutzt um eine neue Kamera hinzuzufügen - eine Kamera welche eine gewisse Entitität beobachtet
 	public Cam addCamera( Entity toFocus ) {
@@ -53,86 +55,114 @@ public class EntityControl {
 		return camera;
 	}
 	
-	//spawn methode wird benutzt um eine Entit�t zu instanzieren
-	//e.g. Entity adler = EntityControl.getInstance().spawn( Adler ); wobei Adler eine Klasse ist die von Entity erbt
-	public Entity spawn( Class<? extends Entity> entityType ) throws InstantiationException, IllegalAccessException {
-		Entity entity = entityType.newInstance(); //erzeugt eine Instanz der Klasse die als Parameter �bergeben wurde
-		addEntity( entity ); //f�gt die Entit�t der Liste von Entit�ten hinzu die der Welt hinzugef�gt werden
-		return entity; //und gibt sie zur�ck
+	//fügt eine neue Spieler Entität hinzu. Dieser braucht gewisse Eigenschaften
+	public Player addPlayer( Class<? extends Player> entityType, long id, boolean local, String name, int lobbyNr ) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException  {
+		Player newPlayer;
+		newPlayer = entityType.getConstructor( long.class, boolean.class, String.class, int.class ).newInstance( id, local, name, lobbyNr );
+		addEntity( newPlayer );
+		players.add( newPlayer );
+		return newPlayer;
 	}
 	
-	//despawn methode wird benutzt um eine Entit�t zu l�schen
+	//spawn methode wird benutzt um eine Entität zu instanzieren
+	//e.g. Entity adler = EntityControl.getInstance().spawn( Adler ); wobei Adler eine Klasse ist die von Entity erbt
+	public Entity spawn( Class<? extends Entity> entityType ) throws InstantiationException, IllegalAccessException {
+		Entity entity = entityType.newInstance(); //erzeugt eine Instanz der Klasse die als Parameter übergebenn wurde
+		addEntity( entity ); //fügt die Entität der Liste von Entitäten hinzu die der Welt hinzugefügt werden
+		return entity; //und gibt sie zurück
+	}
+	
+	//despawn methode wird benutzt um eine Entität zu löschen
 	//e.g. EntityControl.getInstance().despawn( adler ); 
 	public void despawn( Entity entity )
 	{
-		if ( !entity.getDespawned() ) //wenn die Entit�t nicht bereits gel�scht wurde
+		if ( !entity.getDespawned() ) //wenn die Entität nicht bereits gelöscht wurde
 		{
-			entity.setDespawned(); //wird sie als gel�scht gesetzt
-			removeEntity( entity ); //und f�gt die Entit�t der List von Entit�ten hinzu die entfernt werden m�ssen
+			entity.setDespawned(); //wird sie als gelöscht gesetzt
+			removeEntity( entity ); //und fügt die Entität der List von Entitäten hinzu die entfernt werden müssen
 		}
 	}
 	
-	private void addEntity( Entity entity ) //methode um Entit�t der Liste von Entit�ten hinzuzuf�gen die hinzugef�gt werden m�ssen
+	private void addEntity( Entity entity ) //methode um Entität der Liste von Entitäten hinzuzufügen die hinzugefügt werden müssen
 	{
 		toSpawnEntities.add( entity );
 	}
 	
-	private void removeEntity( Entity entity ) //methode um Entit�t der Liste von Entit�ten hinzuzuf�gen die entfernt werden m�ssen
+	private void removeEntity( Entity entity ) //methode um Entität der Liste von Entitäten hinzuzufügen die entfernt werden müssen
 	{
 		if ( !toDespawnEntities.contains( entity ) && worldEntities.contains( entity ) )
 			toDespawnEntities.add( entity );
 	}
 	
-	public void processEntityLife() //entfernt und f�gt Elemente hinzu von den Listen der Elemente die Hinzugef�gt/Entfernt werden m�ssen
+	public void processEntityLife() //entfernt und fügt Elemente hinzu von den Listen der Elemente die Hinzugefügt/Entfernt werden müssen
 	{
-		for ( Entity entity : toDespawnEntities ) { //f�r alle Entit�ten die Entfernt werden m�ssen
+		for ( Entity entity : toDespawnEntities ) { //für alle Entitäten die Entfernt werden müssen
 			worldEntities.remove( entity ); //von der allgemeinen Liste entfernen
 			if ( entity instanceof MovingEntity ) {
-				movingEntities.remove( (MovingEntity)entity ); //falls es eine Bewegliche Entit�t ist von der Liste Beweglicher Entit�ten entfernen
+				movingEntities.remove( (MovingEntity)entity ); //falls es eine Bewegliche Entität ist von der Liste Beweglicher Entitäten entfernen
 			}
-			else if ( entity.getHitbox() != null ) { //falls es keine Bewegliche Entit�t ist und eine Hitbox hat
+			else if ( entity.getHitbox() != null ) { //falls es keine Bewegliche Entität ist und eine Hitbox hat
 				immobileEntities.remove( entity ); //von der Liste unbeweglicher Physikalischer Elemente entfernen
 			}
-			if ( entity.hasLogic() ) { //falls eine Entit�t Logik hat die regelm��ig ausgef�hrt wird
-				logicalEntities.remove( entity ); //entferne die Entit�t von der Liste der Entit�ten mit Logik
+			if ( entity.hasLogic() ) { //falls eine Entität Logik hat die regelmäßig ausgeführt wird
+				logicalEntities.remove( entity ); //entferne die Entität von der Liste der Entitäten mit Logik
 			}
 		}
-		toDespawnEntities = new ArrayList<Entity>(); //setzte die Liste von Entit�ten zur�ck die gel�scht werden m�ssen
-		for ( Entity entity : toSpawnEntities ) { //f�r alle Entit�ten die hinzugef�gt werden m�ssen
-			if ( entity.getDespawned() ) //falls die Entit�t bereits gel�scht wurde
-				continue; //�berspringe das hinzuf�gen
-			worldEntities.add( entity ); //zur allgemeinen Liste hinzuf�gen
-			if ( entity instanceof MovingEntity ) { //falls es eine bewegliche Entit�t ist
-				movingEntities.add( (MovingEntity)entity ); //zur beweglichen Liste hinzuf�gen
+		toDespawnEntities = new ArrayList<Entity>(); //setzte die Liste von Entitäten zurück die gelöscht werden müssen
+		for ( Entity entity : toSpawnEntities ) { //für alle Entitäten die hinzugefügt werden müssen
+			if ( entity.getDespawned() ) //falls die Entität bereits gelöscht wurde
+				continue; //überspringe das hinzufügen
+			worldEntities.add( entity ); //zur allgemeinen Liste hinzufügen
+			if ( entity instanceof MovingEntity ) { //falls es eine bewegliche Entität ist
+				movingEntities.add( (MovingEntity)entity ); //zur beweglichen Liste hinzufügen
 			}
 			else if ( entity.getHitbox() != null ) { //andernfalls und falls es eine Hitbox hat
-				immobileEntities.add( entity ); //zur Liste Physikalischer Unbeweglicher Entit�ten hinzuf�gen
+				immobileEntities.add( entity ); //zur Liste Physikalischer Unbeweglicher Entitäten hinzufügen
 			}
-			if ( entity.hasLogic() ) { //falls eine Entit�t Logik hat die regelm��ig ausgef�hrt wird
-				logicalEntities.add( entity ); //zur Liste logischer Entit�ten hinzuf�gen
+			if ( entity.hasLogic() ) { //falls eine Entität Logik hat die regelmäßig ausgeführt wird
+				logicalEntities.add( entity ); //zur Liste logischer Entitäten hinzufügen
 			}
 		}
-		toSpawnEntities = new ArrayList<Entity>(); //setzt die Liste mit Entit�ten zur�ck die hinzugef�gt werden m�ssen
+		toSpawnEntities = new ArrayList<Entity>(); //setzt die Liste mit Entitäten zurück die hinzugefügt werden müssen
 	}
 	
-	public ArrayList<Entity> getWorldEntities() { //gibt die Liste der Entit�ten zur�ck die in der Welt vorhanden sind
+	public ArrayList<Entity> getWorldEntities() { //gibt die Liste der Entitäten zurück die in der Welt vorhanden sind
 		return worldEntities;
 	}
 	
-	public ArrayList<Entity> getLogicalEntities() { //gibt die Liste der Entit�ten zur�ck die Logik haben die regelm��ig ausgef�hrt
+	public ArrayList<Entity> getLogicalEntities() { //gibt die Liste der Entitäten zurück die Logik haben die regelmäßig ausgeführt
 		return logicalEntities; //werden muss
 	}
 	
-	public ArrayList<MovingEntity> getMovingEntities() { //gibt die Liste beweglicher Elemente zur�ck
+	public ArrayList<MovingEntity> getMovingEntities() { //gibt die Liste beweglicher Entitäten zurück
 		return movingEntities;
 	}
 	
-	public ArrayList<Entity> getImmobileEntities() { //gibt die Liste unbeweglicher Elemente zur�ck, die eine Hitbox haben
+	public ArrayList<Entity> getImmobileEntities() { //gibt die Liste unbeweglicher Entitäten zurück, die eine Hitbox haben
 		return immobileEntities;
 	}
 	
-	public ArrayList<Cam> getCameras() {
+	public ArrayList<Cam> getCameras() { //gibt alle Kameras/Beobachter zurück ( mehrere Kameras für z.B. SplitScreen )
 		return cameras;
 	}
 	
+	public ArrayList<Player> getPlayers() { //gibt alle Spieler zurück
+		return players;
+	}
+	
+	public ArrayList<Player> getLocalPlayers() { //gibt alle Spieler zurück die Lokal sind
+		ArrayList<Player> localPlayers = new ArrayList<Player>();
+		for ( Player player : players )
+			if ( player.getLocal() )
+				localPlayers.add( player );
+		return localPlayers;
+	}
+	
+	public ArrayList<Player> getNetworkPlayers() { //gibt alle Spieler zurück die übers Netzwerk spielen
+		ArrayList<Player> networkPlayers = new ArrayList<Player>();
+		for ( Player player : players )
+			if ( !player.getLocal() )
+				networkPlayers.add( player );
+		return networkPlayers;
+	}
 }
